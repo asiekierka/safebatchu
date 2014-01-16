@@ -1,0 +1,15 @@
+{
+  "name": "safebatchu",
+  "description": "Safebooru.org batch downloader",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "underscore": ">=1.4.0",
+    "request": ">=2.27.0",
+    "jsdom": ">=0.8.10",
+    "jquery": "2.x.x",
+    "optimist": ">=0.6.0",
+    "async": ">=0.2.9",
+    "ent": ">=0.1.0"
+  }
+}
