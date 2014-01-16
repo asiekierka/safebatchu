@@ -2,6 +2,7 @@
 var URL = "http://safebooru.org/";
 var IMAGE_URL = "http://safebooru.org/";
 var MAX_NAME_LENGTH = 235;
+var USER_AGENT = "Mozilla/5.0 (Safebatchu) WebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11";
 
 // Libraries
 var fs		= require("fs")
@@ -18,7 +19,7 @@ function downloadPage(position, callback) {
 	var listUrl = URL + "index.php?page=post&s=list&tags=" + tags.join("+") + "&pid=" + position;
 	console.log("Downloading images from position "+ position);
 	request({url: listUrl, headers: {
-			"User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; X11; Linux i686; en) Opera 8.01"
+			"User-Agent": USER_AGENT
 		}}, function(err, response, body) {
 			if(err) throw err;
 			if(response.statusCode != 200) {
@@ -68,7 +69,7 @@ if(!_.isArray(tags) || tags.length < 1) {
 						return;
 					} else console.log("  [" + pid + "] Downloading image #" + link.id);
 					var dl = function() {
-						child = exec('wget -O "' + outFile + '" "' + link.url + '"', function(err, stdout, stderr) {
+						child = exec('wget -U "' + USER_AGENT + '" -O "' + outFile + '" "' + link.url + '"', function(err, stdout, stderr) {
 							if(err) {
 								if(stderr.contains("timed out")) dl();
 								else throw err;
