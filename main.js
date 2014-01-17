@@ -37,6 +37,9 @@ var websites = {
 	},
 	"pixiv": {
 		"engine": "pixiv-nekomaid"
+	},
+	"deviantart": {
+		"engine": "deviantart"
 	}
 };
 
@@ -91,11 +94,11 @@ function downloadPage(position, callback) {
 	);
 }
 
-function downloadWget(url, out, callback) {
+function downloadWget(url, out, referer, callback) {
 	var cleanupFailure = function() {
 		if(fs.existsSync(out)) fs.unlinkSync(out);
 	};
-	child = exec('wget -U "' + USER_AGENT + '" -O "' + out + '" "' + url + '"',
+	child = exec('wget ' + (_.isString(referer) ? '--referer="' + referer + '" ' : "") + '-U "' + USER_AGENT + '" -O "' + out + '" "' + url + '"',
 		function(err, stdout, stderr) {
 			if(err) {
 				if(stderr.indexOf("timed out") >= 0) {
@@ -115,14 +118,14 @@ function downloadWget(url, out, callback) {
 
 var imagesDownloaded = 0;
 
-function downloadImage(name, url, out, callback) {
+function downloadImage(name, url, out, referer, callback) {
 	imagesDownloaded++;
 	if(fs.existsSync(out)) {
 		console.log("  [" + imagesDownloaded + "] Already downloaded " + name + "!");
 		callback();
 		return;
 	} else console.log("  [" + imagesDownloaded + "] Downloading image " + name);
-	downloadWget(url, out, callback);
+	downloadWget(url, out, referer, callback);
 }
 
 // Handle args
@@ -136,7 +139,7 @@ if(!_.isArray(tags) || tags.length < 1) {
 	console.log("No such website: " + params["w"] + "!");
 } else {
 	var website = websites[params["w"]];
-	engine = require("./engines/" + website.engine)(website);
+	engine = require("./engines/" + website.engine)(_.extend(website, {"useragent": USER_AGENT}));
 	// Begin download
 	if(_.contains(engine, "init")) engine.init(postInit);
 	else postInit();
@@ -168,7 +171,7 @@ function postInit() {
 		// Add filename
 		links = _.map(links, function(data) {
 			var ext = path.extname(data.url.split("?")[0]);
-			data.filename = data.id + " - " + data.tags.join(", ");
+			if(!_.has(data, "filename")) data.filename = data.id + " - " + data.tags.join(", ");
 			data.filename = data.filename.replace(/\//g, "_").substr(0, MAX_NAME_LENGTH) + ext;
 			return data;
 		});
@@ -177,7 +180,7 @@ function postInit() {
 		}
 		console.log("  " + links.length + " images found");
 		async.eachSeries(links, function(link, callback) {
-			downloadImage(link.name, link.url, outDir + "/" + link.filename, callback);
+			downloadImage(link.name, link.url, outDir + "/" + link.filename, link.referer, callback);
 		}, function() {
 			downloadFunc();
 		});
