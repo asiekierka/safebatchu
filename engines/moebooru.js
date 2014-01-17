@@ -20,7 +20,8 @@ module.exports = function(options) {
 					id: image.id,
 					tags: image.tags.split(" "),
 					name: "#" + image.id,
-					url: image.file_url
+					url: image.file_url,
+					rating: image.rating || "u"
 				};
 			});
 			callback(undefined, images, {

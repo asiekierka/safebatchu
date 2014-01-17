@@ -21,7 +21,8 @@ module.exports = function(options) {
 					id: image.id,
 					tags: image.tag_string_general.split(" "),
 					name: "#" + image.id,
-					url: image.file_url
+					url: image.file_url,
+					rating: image.rating || "u"
 				};
 				if(data.url.indexOf("http") != 0) data.url = engine.IMAGE_URL + data.url;
 				return data;

@@ -62,6 +62,7 @@ _.each(args, function(arg) {
 function usage() {
 	console.log("Usage: node main <-w website> <tags>");
 	console.log("   -m id        Set minimum ID. Images below that ID will be ignored.");
+	console.log("   -r ratings   Set allowed ratings. -r sqe, for instance.");
 	console.log("   -w website   Specify a website to download from.");
 	console.log("");
 	console.log("Supported websites: " + _.keys(websites).sort().join(", "));
@@ -139,6 +140,12 @@ if(!_.isArray(tags) || tags.length < 1) {
 		links = _.filter(links, function(data) {
 			if(_.isNumber(params["m"]) && data.id < params["m"])
 				return false;
+			if(_.isString(params["r"])) {
+				if(params["r"].indexOf(data.rating) < 0) {
+					console.log("  Removed image " + data.name + " due to rating!");
+					return false;
+				}
+			}
 			return true;
 		});
 		if(links.length == 0) {
