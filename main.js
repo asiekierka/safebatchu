@@ -17,6 +17,10 @@ var websites = {
 	"safebooru": {
 		"engine": "gelbooru",
 		"url": "http://safebooru.org/"
+	},
+	"derpibooru": {
+		"engine": "derpibooru",
+		"url": "http://derpibooru.org/"
 	}
 };
 
@@ -116,40 +120,49 @@ if(!_.isArray(tags) || tags.length < 1) {
 	var outDir = tags.join(" ");
 	if(!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 	var pid = 0;
+	var parseFunc = function(err, links, result) {
+ 		if(err) throw err;
+		// Remove unwanted
+		links = _.filter(links, function(data) {
+			if(_.isNumber(params["m"]) && data.id < params["m"])
+				return false;
+			return true;
+		});
+		if(links.length == 0) {
+			console.log("Downloaded all images, quitting");
+			return;
+		}
+		// Add filename
+		links = _.map(links, function(data) {
+			var ext = path.extname(data.url.split("?")[0]);
+			data.filename = data.id + " - " + data.tags.join(", ");
+			data.filename = data.filename.replace(/\//g, "_").substr(0, MAX_NAME_LENGTH) + ext;
+			return data;
+		});
+		if(_.isObject(result)) {
+			if(_.isNumber(result.pageChangeAmount)) pid += result.pageChangeAmount;
+		}
+		console.log("  " + links.length + " images found");
+		async.eachSeries(links, function(link, callback) {
+			downloadImage(link.name, link.url, outDir + "/" + link.filename, callback);
+		}, function() {
+			downloadFunc();
+		});
+	};
+
 	var downloadFunc = function() {
 		downloadPage(pid, function(out) {
-			jsdom.env({html: out, done: function(err, window) {
-				if(err) throw err;
-				engine.parsePage(window, function(err, links, result) {
+			var parseFormat = engine.parseFormat || "html";
+			if(parseFormat == "html") {
+				jsdom.env({html: out, done: function(err, window) {
 					if(err) throw err;
-					// Remove unwanted
-					links = _.filter(links, function(data) {
-						if(_.isNumber(params["m"]) && data.id < params["m"])
-							return false;
-						return true;
-					});
-					if(links.length == 0) {
-						console.log("Downloaded all images, quitting");
-						return;
-					}
-					// Add filename
-					links = _.map(links, function(data) {
-						var ext = path.extname(data.url.split("?")[0]);
-						data.filename = data.id + " - " + data.tags;
-						data.filename = data.filename.replace(/\//g, "_").substr(0, MAX_NAME_LENGTH) + ext;
-						return data;
-					});
-					if(_.isObject(result)) {
-						if(_.isNumber(result.pageChangeAmount)) pid += result.pageChangeAmount;
-					}
-					console.log("  " + links.length + " images found");
-					async.eachSeries(links, function(link, callback) {
-						downloadImage(link.name, link.url, outDir + "/" + link.filename, callback);
-					}, function() {
-						downloadFunc();
-					});
-				});
-			}});
+					engine.parsePage(window, parseFunc);
+				}});
+			} else if(parseFormat == "json") {
+				engine.parsePage(JSON.parse(out), parseFunc);
+			} else if(parseFormat == "raw") {
+				engine.parsePage(out, parseFunc);
+			}
 		});
 	};
 	downloadFunc();
