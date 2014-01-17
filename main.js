@@ -13,16 +13,34 @@ var fs		= require("fs")
   , request	= require("request")
   , async	= require("async");
 
-var engine = require("./engines/gelbooru.js")({
-	url: "http://safebooru.org/"
+var websites = {
+	"safebooru": {
+		"engine": "gelbooru",
+		"url": "http://safebooru.org/"
+	}
+};
+
+var engine = undefined;
+
+var args = process.argv;
+args.shift(); args.shift(); // remove unwanted node and filename
+var params = {}, tags = [];
+var nextParam = undefined;
+var tagMode = false;
+
+_.each(args, function(arg) {
+	if(!_.isString(arg)) return; // sanity check
+	if(tagMode) { tags.push(arg); }
+	else if(nextParam !== undefined) {
+		params[nextParam] = arg;
+		nextParam = undefined;
+	} else if(arg.indexOf("-") == 0) {
+		nextParam = arg.substr(1);
+	} else {
+		tagMode = true;
+		tags.push(arg);
+	}
 });
-
-var tags = process.argv;
-tags.shift(); tags.shift(); // remove unwanted node and filename
-
-function getFilename() {
-
-}
 
 function downloadPage(position, callback) {
 	var listUrl = engine.getPageURL({page: position, tags: tags});
@@ -72,10 +90,17 @@ function downloadImage(name, url, out, callback) {
 	downloadWget(url, out, callback);
 }
 
+// Handle args
+if(!_.isString(params["w"])) params["w"] = "safebooru";
+
 // Sanity checks
 if(!_.isArray(tags) || tags.length < 1) {
-	console.log("Usage: node main [tags]");
+	console.log("Usage: node main [-w website] <tags>");
+} else if(!_.has(websites, params["w"])) {
+	console.log("No such website: " + params["w"] + "!");
 } else {
+	var website = websites[params["w"]];
+	engine = require("./engines/" + website.engine)(website);
 	// Begin download
 	console.log("Downloading with tags: " + tags.join(", "));
 	var outDir = tags.join(" ");
