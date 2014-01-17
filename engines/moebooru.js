@@ -4,10 +4,9 @@ var _ = require("underscore")
 module.exports = function(options) {
 	return {
 		URL: options.url,
-		IMAGE_URL: options.image_url || options.url,
 		parseFormat: "json",
 		getPageURL: function(options) {
-			var url = "posts.json?limit=100";
+			var url = "post.json?limit=100";
 
 			if(_.isArray(options.tags)) url += "&tags=" + encodeURIComponent(options.tags.join(" "));
 			if(_.isNumber(options.page) && options.page > 0) url += "&page=" + (options.page+1);
@@ -17,14 +16,12 @@ module.exports = function(options) {
 		parsePage: function(json, callback) {
 			var engine = this;
 			var images = _.map(json, function(image) {
-				var data = {
+				return {
 					id: image.id,
-					tags: image.tag_string_general.split(" "),
+					tags: image.tags.split(" "),
 					name: "#" + image.id,
 					url: image.file_url
 				};
-				if(data.url.indexOf("http") != 0) data.url = engine.IMAGE_URL + data.url;
-				return data;
 			});
 			callback(undefined, images, {
 				pageChangeAmount: 1

@@ -26,6 +26,14 @@ var websites = {
 		"engine": "danbooru",
 		"url": "http://danbooru.donmai.us/",
 		"image_url": "http://danbooru.donmai.us"
+	},
+	"konachan": {
+		"engine": "moebooru",
+		"url": "http://konachan.com/"
+	},
+	"yandere": {
+		"engine": "moebooru",
+		"url": "http://yande.re/"
 	}
 };
 
