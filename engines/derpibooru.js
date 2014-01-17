@@ -2,8 +2,7 @@
 // Support ALL the boorus! o3o
 
 var _ = require("underscore")
-  , jquery = require("jquery")
-  , ent = require("ent");
+  , jquery = require("jquery");
 
 module.exports = function(options) {
 	return {

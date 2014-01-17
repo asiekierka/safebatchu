@@ -21,6 +21,11 @@ var websites = {
 	"derpibooru": {
 		"engine": "derpibooru",
 		"url": "http://derpibooru.org/"
+	},
+	"danbooru": {
+		"engine": "danbooru",
+		"url": "http://danbooru.donmai.us/",
+		"image_url": "http://danbooru.donmai.us"
 	}
 };
 
