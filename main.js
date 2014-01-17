@@ -34,6 +34,9 @@ var websites = {
 	"yandere": {
 		"engine": "moebooru",
 		"url": "http://yande.re/"
+	},
+	"pixiv": {
+		"engine": "pixiv-nekomaid"
 	}
 };
 
@@ -54,8 +57,12 @@ _.each(args, function(arg) {
 	} else if(arg.indexOf("-") == 0) {
 		nextParam = arg.substr(1);
 	} else {
-		tagMode = true;
-		tags.push(arg);
+		if(arg.indexOf("http:") == 0 && !_.isString(params["website"])) {
+			params["website"] = arg;
+		} else {
+			tagMode = true;
+			tags.push(arg);
+		}
 	}
 });
 
@@ -71,6 +78,7 @@ function usage() {
 function downloadPage(position, callback) {
 	var listUrl = engine.getPageURL({page: position, tags: tags});
 	console.log("Downloading page #" + position);
+	if(params["d"] == "true") console.log("URL: " + listUrl);
 	if(_.has(engine, "downloadPage")) engine.downloadPage(listUrl, callback)
 	else request({url: listUrl, headers: {
 			"User-Agent": USER_AGENT
@@ -119,7 +127,7 @@ function downloadImage(name, url, out, callback) {
 
 // Handle args
 if(_.isString(params["m"])) params["m"] = Number(params["m"]);
-if(!_.isString(params["w"])) params["w"] = "safebooru";
+//if(!_.isString(params["w"])) params["w"] = "safebooru";
 
 // Sanity checks
 if(!_.isArray(tags) || tags.length < 1) {
