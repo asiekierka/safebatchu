@@ -33,7 +33,7 @@ module.exports = function(options) {
 				})
 				.value();
 			callback(undefined, images, {
-				pageChangeAmount: json.header.perpage
+				pageChangeAmount: Number(json.header.perpage)
 			});
 		}
 	};

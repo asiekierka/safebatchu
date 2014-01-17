@@ -138,6 +138,11 @@ if(!_.isArray(tags) || tags.length < 1) {
 	var website = websites[params["w"]];
 	engine = require("./engines/" + website.engine)(website);
 	// Begin download
+	if(_.contains(engine, "init")) engine.init(postInit);
+	else postInit();
+}
+
+function postInit() {
 	console.log("Downloading with tags: " + tags.join(", "));
 	var outDir = tags.join(" ");
 	if(!fs.existsSync(outDir)) fs.mkdirSync(outDir);
