@@ -42,10 +42,19 @@ _.each(args, function(arg) {
 	}
 });
 
+function usage() {
+	console.log("Usage: node main <-w website> <tags>");
+	console.log("   -m id        Set minimum ID. Images below that ID will be ignored.");
+	console.log("   -w website   Specify a website to download from.");
+	console.log("");
+	console.log("Supported websites: " + _.keys(websites).sort().join(", "));
+}
+
 function downloadPage(position, callback) {
 	var listUrl = engine.getPageURL({page: position, tags: tags});
 	console.log("Downloading page #" + position);
-	request({url: listUrl, headers: {
+	if(_.has(engine, "downloadPage")) engine.downloadPage(listUrl, callback)
+	else request({url: listUrl, headers: {
 			"User-Agent": USER_AGENT
 		}}, function(err, response, body) {
 			if(err) throw err;
@@ -91,11 +100,12 @@ function downloadImage(name, url, out, callback) {
 }
 
 // Handle args
+if(_.isString(params["m"])) params["m"] = Number(params["m"]);
 if(!_.isString(params["w"])) params["w"] = "safebooru";
 
 // Sanity checks
 if(!_.isArray(tags) || tags.length < 1) {
-	console.log("Usage: node main [-w website] <tags>");
+	usage();
 } else if(!_.has(websites, params["w"])) {
 	console.log("No such website: " + params["w"] + "!");
 } else {
@@ -112,10 +122,17 @@ if(!_.isArray(tags) || tags.length < 1) {
 				if(err) throw err;
 				engine.parsePage(window, function(err, links, result) {
 					if(err) throw err;
-					else if(links.length == 0) {
+					// Remove unwanted
+					links = _.filter(links, function(data) {
+						if(_.isNumber(params["m"]) && data.id < params["m"])
+							return false;
+						return true;
+					});
+					if(links.length == 0) {
 						console.log("Downloaded all images, quitting");
 						return;
 					}
+					// Add filename
 					links = _.map(links, function(data) {
 						var ext = path.extname(data.url.split("?")[0]);
 						data.filename = data.id + " - " + data.tags;
