@@ -24,6 +24,7 @@ module.exports = function(options) {
 					name: "#" + image.id_number,
 					url: image.image
 				};
+				data.rating = _.contains(data.tags, "explicit") ? "e" : _.contains(data.tags, "questionable") ? "q" : _.contains(data.tags, "safe") ? "s" : "u";
 				if(data.url.indexOf("http") != 0) data.url = "http:" + data.url;
 				return data;
 			});
