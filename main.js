@@ -60,8 +60,8 @@ _.each(args, function(arg) {
 	} else if(arg.indexOf("-") == 0) {
 		nextParam = arg.substr(1);
 	} else {
-		if(arg.indexOf("http:") == 0 && !_.isString(params["website"])) {
-			params["website"] = arg;
+		if(arg.indexOf("http:") == 0 && !_.isString(params["url"])) {
+			params["url"] = arg;
 		} else {
 			tagMode = true;
 			tags.push(arg);
@@ -129,9 +129,19 @@ function downloadImage(name, url, out, referer, callback) {
 	downloadWget(url, out, referer, callback);
 }
 
+function downloadImages(links, outDir, callbackFunc) {
+	async.eachSeries(links, function(link, callback) {
+		downloadImage(link.name, link.url, outDir + "/" + link.filename, link.referer, callback);
+	}, function() {
+		callbackFunc();
+	});
+}
+
 // Handle args
 if(_.isString(params["m"])) params["m"] = Number(params["m"]);
-//if(!_.isString(params["w"])) params["w"] = "safebooru";
+if(!_.isString(params["w"]) && _.isString(params["url"])) {
+	// TODO: add URL support for imgur/4chan
+}
 
 // Sanity checks
 if(!_.isArray(tags) || tags.length < 1) {
@@ -142,49 +152,69 @@ if(!_.isArray(tags) || tags.length < 1) {
 	var website = websites[params["w"]];
 	engine = require("./engines/" + website.engine)(_.extend(website, {"useragent": USER_AGENT}));
 	// Begin download
-	if(_.contains(engine, "init")) engine.init(postInit);
-	else postInit();
+	if(_.isString(params["url"])) {
+		// TODO: add URL support for imgur/4chan
+	} else {
+		if(_.contains(engine, "init")) engine.init(downloadTagBased);
+		else downloadTagBased();
+	}
 }
 
-function postInit() {
+function updateWithParams(links, params) {
+	links = _.filter(links, function(data) {
+		if(_.isNumber(data.id) && _.isNumber(params["m"]) && data.id < params["m"])
+			return false; // Minimum ID check
+		if(_.isString(data.rating) && _.isString(params["r"])) {
+			// Rating check
+			if(params["r"].indexOf(data.rating) < 0) {
+				if(_.isString(data.name))
+					console.log("  Removed image " + data.name + " due to rating!");
+				return false;
+			}
+		}
+		return true;
+	});
+	links = _.map(links, function(data) {
+		var ext = path.extname(data.url.split("?")[0]);
+		if(!_.has(data, "filename")) {
+			// Set initial filename
+			if(_.isNumber(data.id)) {
+				data.filename = data.id+"";
+			} else if(_.isString(data.name)) {
+				data.filename = data.name;
+			}
+			// Add comment
+			if(_.isArray(data.tags)) {
+				data.filename += " - " + data.tags.join(", ");
+			} else if(_.isString(data.comment)) {
+				data.filename += " - " + data.comment;
+			}
+		}
+		// Shorten, add extension
+		data.filename = data.filename.replace(/\//g, "_").substr(0, MAX_NAME_LENGTH) + ext;
+		return data;
+	});
+	return links;
+}
+
+function downloadTagBased() {
 	console.log("Downloading with tags: " + tags.join(", "));
 	var outDir = params["O"] || tags.join(" ");
 	if(!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 	var pid = 0;
 	var parseFunc = function(err, links, result) {
  		if(err) throw err;
-		// Remove unwanted
-		links = _.filter(links, function(data) {
-			if(_.isNumber(params["m"]) && data.id < params["m"])
-				return false;
-			if(_.isString(params["r"])) {
-				if(params["r"].indexOf(data.rating) < 0) {
-					console.log("  Removed image " + data.name + " due to rating!");
-					return false;
-				}
-			}
-			return true;
-		});
-		if(links.length == 0) {
+		else if(links.length == 0) {
 			console.log("Downloaded all images, quitting");
 			return;
 		}
-		// Add filename
-		links = _.map(links, function(data) {
-			var ext = path.extname(data.url.split("?")[0]);
-			if(!_.has(data, "filename")) data.filename = data.id + " - " + data.tags.join(", ");
-			data.filename = data.filename.replace(/\//g, "_").substr(0, MAX_NAME_LENGTH) + ext;
-			return data;
-		});
+		links = updateWithParams(links, params);
+		console.log("  " + links.length + " images found");
 		if(_.isObject(result)) {
+			// Update based on engine output
 			if(_.isNumber(result.pageChangeAmount)) pid += result.pageChangeAmount;
 		}
-		console.log("  " + links.length + " images found");
-		async.eachSeries(links, function(link, callback) {
-			downloadImage(link.name, link.url, outDir + "/" + link.filename, link.referer, callback);
-		}, function() {
-			downloadFunc();
-		});
+		downloadImages(links, outDir, downloadFunc);
 	};
 
 	var downloadFunc = function() {
