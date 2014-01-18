@@ -1,8 +1,7 @@
 // To all anime fans commenting on the inclusion of this: It is merely included for completeness.
 // Support ALL the boorus! o3o
 
-var _ = require("underscore")
-  , jquery = require("jquery");
+var _ = require("underscore");
 
 module.exports = function(options) {
 	return {

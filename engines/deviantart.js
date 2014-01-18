@@ -18,8 +18,7 @@ module.exports = function(options) {
 
 			return url;
 		},
-		parsePage: function(window, callback) {
-			var $ = jquery(window);
+		parsePage: function(window, $, callback) {
 			var engine = this;
 			var urls = [], images = [];
 			$("span a.thumb").each(function() {

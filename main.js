@@ -71,9 +71,10 @@ _.each(args, function(arg) {
 
 function usage() {
 	console.log("Usage: node main <-w website> <tags>");
-	console.log("   -m id        Set minimum ID. Images below that ID will be ignored.");
-	console.log("   -r ratings   Set allowed ratings. -r sqe, for instance.");
-	console.log("   -w website   Specify a website to download from.");
+	console.log("   -m id        Images below this ID will be ignored.");
+	console.log("   -O dir       Output to this directory. (Default: your tags)");
+	console.log("   -r ratings   Allow only those ratings. -r sqe, for instance.");
+	console.log("   -w website   Download from the specified website.");
 	console.log("");
 	console.log("Supported websites: " + _.keys(websites).sort().join(", "));
 }
@@ -147,7 +148,7 @@ if(!_.isArray(tags) || tags.length < 1) {
 
 function postInit() {
 	console.log("Downloading with tags: " + tags.join(", "));
-	var outDir = tags.join(" ");
+	var outDir = params["O"] || tags.join(" ");
 	if(!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 	var pid = 0;
 	var parseFunc = function(err, links, result) {
@@ -192,7 +193,7 @@ function postInit() {
 			if(parseFormat == "html") {
 				jsdom.env({html: out, done: function(err, window) {
 					if(err) throw err;
-					engine.parsePage(window, parseFunc);
+					engine.parsePage(window, jquery(window), parseFunc);
 				}});
 			} else if(parseFormat == "json") {
 				engine.parsePage(JSON.parse(out), parseFunc);

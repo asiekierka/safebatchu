@@ -1,7 +1,6 @@
 // Uses api.neko.maid.tw because pixiv would kill us for the bandwidthraep
 
-var _ = require("underscore")
-  , jquery = require("jquery");
+var _ = require("underscore");
 
 module.exports = function(options) {
 	return {

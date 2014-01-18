@@ -1,5 +1,4 @@
 var _ = require("underscore")
-  , jquery = require("jquery")
   , ent = require("ent");
 
 module.exports = function(options) {
@@ -16,8 +15,7 @@ module.exports = function(options) {
 
 			return this.URL + url;
 		},
-		parsePage: function(window, callback) {
-			var $ = jquery(window);
+		parsePage: function(window, $, callback) {
 			var images = [];
 			var engine = this;
 			$("img.preview").each(function() {

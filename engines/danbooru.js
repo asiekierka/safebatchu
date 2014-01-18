@@ -1,5 +1,4 @@
-var _ = require("underscore")
-  , jquery = require("jquery");
+var _ = require("underscore");
 
 module.exports = function(options) {
 	return {
