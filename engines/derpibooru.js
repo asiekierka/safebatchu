@@ -15,7 +15,7 @@ module.exports = function(options) {
 
 			return this.URL + url;
 		},
-		parsePage: function(json, callback) {
+		parsePage: function(url, json, callback) {
 			var images = _.map(json, function(image) {
 				var data = {
 					id: image.id_number,

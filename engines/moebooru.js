@@ -12,7 +12,7 @@ module.exports = function(options) {
 
 			return this.URL + url;
 		},
-		parsePage: function(json, callback) {
+		parsePage: function(url, json, callback) {
 			var engine = this;
 			var images = _.map(json, function(image) {
 				return {

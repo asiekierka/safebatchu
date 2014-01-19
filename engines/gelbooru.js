@@ -15,7 +15,7 @@ module.exports = function(options) {
 
 			return this.URL + url;
 		},
-		parsePage: function(window, $, callback) {
+		parsePage: function(url, window, $, callback) {
 			var images = [];
 			var engine = this;
 			$("img.preview").each(function() {

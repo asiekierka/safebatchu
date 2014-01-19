@@ -13,7 +13,7 @@ module.exports = function(options) {
 
 			return url;
 		},
-		parsePage: function(json, callback) {
+		parsePage: function(url, json, callback) {
 			var images = _.chain(json.artworks)
 				.filter(function(image) {
 					return image.photos.length == 1; // Block multiple-image pixiv entries (FOR NOW)

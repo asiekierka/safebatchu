@@ -82,7 +82,6 @@ function usage() {
 function downloadPage(position, callback) {
 	var listUrl = engine.getPageURL({page: position, tags: tags});
 	console.log("Downloading page #" + position);
-	if(params["d"] == "true") console.log("URL: " + listUrl);
 	if(_.has(engine, "downloadPage")) engine.downloadPage(listUrl, callback)
 	else request({url: listUrl, headers: {
 			"User-Agent": USER_AGENT
@@ -90,7 +89,7 @@ function downloadPage(position, callback) {
 			if(err) throw err;
 			if(response.statusCode != 200) {
 				console.log("Page " + listUrl + " returned error " + response.statusCode + "!");
-			} else callback(body);
+			} else callback(listUrl, body);
 		}
 	);
 }
@@ -160,6 +159,20 @@ if(!_.isArray(tags) || tags.length < 1) {
 	}
 }
 
+function parsePageEngine(url, out, engine, callback) {
+	var parseFormat = engine.parseFormat || "html";
+	if(parseFormat == "html") {
+		jsdom.env({html: out, done: function(err, window) {
+			if(err) throw err;
+			engine.parsePage(url, window, jquery(window), callback);
+		}});
+	} else if(parseFormat == "json") {
+		engine.parsePage(url, JSON.parse(out), callback);
+	} else if(parseFormat == "raw") {
+		engine.parsePage(url, out, callback);
+	}
+}
+
 function updateWithParams(links, params) {
 	links = _.filter(links, function(data) {
 		if(_.isNumber(data.id) && _.isNumber(params["m"]) && data.id < params["m"])
@@ -197,39 +210,34 @@ function updateWithParams(links, params) {
 	return links;
 }
 
+var pid = 0;
+
+function downloadImageArray(links, result, outDir, callback) {
+	if(links.length == 0) {
+		console.log("Downloaded all images, quitting");
+		return;
+	}
+	links = updateWithParams(links, params);
+	console.log("  " + links.length + " images found");
+	if(_.isObject(result)) {
+		// Update based on engine output
+		if(_.isNumber(result.pageChangeAmount)) pid += result.pageChangeAmount;
+	}
+	downloadImages(links, outDir, callback);
+}
+
 function downloadTagBased() {
 	console.log("Downloading with tags: " + tags.join(", "));
 	var outDir = params["O"] || tags.join(" ");
 	if(!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 	var pid = 0;
 	var parseFunc = function(err, links, result) {
- 		if(err) throw err;
-		else if(links.length == 0) {
-			console.log("Downloaded all images, quitting");
-			return;
-		}
-		links = updateWithParams(links, params);
-		console.log("  " + links.length + " images found");
-		if(_.isObject(result)) {
-			// Update based on engine output
-			if(_.isNumber(result.pageChangeAmount)) pid += result.pageChangeAmount;
-		}
-		downloadImages(links, outDir, downloadFunc);
+		if(err) throw err;
+		else downloadImageArray(links, result, outDir, downloadFunc);
 	};
-
 	var downloadFunc = function() {
-		downloadPage(pid, function(out) {
-			var parseFormat = engine.parseFormat || "html";
-			if(parseFormat == "html") {
-				jsdom.env({html: out, done: function(err, window) {
-					if(err) throw err;
-					engine.parsePage(window, jquery(window), parseFunc);
-				}});
-			} else if(parseFormat == "json") {
-				engine.parsePage(JSON.parse(out), parseFunc);
-			} else if(parseFormat == "raw") {
-				engine.parsePage(out, parseFunc);
-			}
+		downloadPage(pid, function(url, out) {
+			parsePageEngine(url, out, engine, parseFunc);
 		});
 	};
 	downloadFunc();
