@@ -1,6 +1,5 @@
 // Config
 var MAX_NAME_LENGTH = 235;
-var USER_AGENT = "Mozilla/5.0 (Safebatchu) WebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11";
 
 // Libraries
 var fs		= require("fs")
@@ -11,7 +10,8 @@ var fs		= require("fs")
   , jsdom	= require("jsdom")
   , jquery	= require("jquery")
   , request	= require("request")
-  , async	= require("async");
+  , async	= require("async")
+  , util	= require("./util.js");
 
 var websites = {
 	"safebooru": {
@@ -83,9 +83,7 @@ function downloadPage(position, callback) {
 	var listUrl = engine.getPageURL({page: position, tags: tags});
 	console.log("Downloading page #" + position);
 	if(_.has(engine, "downloadPage")) engine.downloadPage(listUrl, callback)
-	else request({url: listUrl, headers: {
-			"User-Agent": USER_AGENT
-		}}, function(err, response, body) {
+	else util.download(listUrl, function(err, response, body) {
 			if(err) throw err;
 			if(response.statusCode != 200) {
 				console.log("Page " + listUrl + " returned error " + response.statusCode + "!");
@@ -98,7 +96,7 @@ function downloadWget(url, out, referer, callback) {
 	var cleanupFailure = function() {
 		if(fs.existsSync(out)) fs.unlinkSync(out);
 	};
-	child = exec('wget ' + (_.isString(referer) ? '--referer="' + referer + '" ' : "") + '-U "' + USER_AGENT + '" -O "' + out + '" "' + url + '"',
+	child = exec('wget ' + (_.isString(referer) ? '--referer="' + referer + '" ' : "") + '-U "' + util.USER_AGENT + '" -O "' + out + '" "' + url + '"',
 		function(err, stdout, stderr) {
 			if(err) {
 				if(stderr.indexOf("timed out") >= 0) {
@@ -149,7 +147,7 @@ if(!_.isArray(tags) || tags.length < 1) {
 	console.log("No such website: " + params["w"] + "!");
 } else {
 	var website = websites[params["w"]];
-	engine = require("./engines/" + website.engine)(_.extend(website, {"useragent": USER_AGENT}));
+	engine = require("./engines/" + website.engine)(_.extend(website, {"useragent": util.USER_AGENT}));
 	// Begin download
 	if(_.isString(params["url"])) {
 		// TODO: add URL support for imgur/4chan
