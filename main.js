@@ -92,28 +92,6 @@ function downloadPage(position, callback) {
 	);
 }
 
-function downloadWget(url, out, referer, callback) {
-	var cleanupFailure = function() {
-		if(fs.existsSync(out)) fs.unlinkSync(out);
-	};
-	child = exec('wget ' + (_.isString(referer) ? '--referer="' + referer + '" ' : "") + '-U "' + util.USER_AGENT + '" -O "' + out + '" "' + url + '"',
-		function(err, stdout, stderr) {
-			if(err) {
-				if(stderr.indexOf("timed out") >= 0) {
-					console.log("    Timed out, retrying in 5 seconds...");
-					setTimeout(function() { downloadWget(url, out, callback); }, 5000);
-				} else if(stderr.indexOf("404 Not Found") >= 0) {
-					console.log("    File not found!");
-					cleanupFailure();
-					callback();
-				}
-				else throw err;
-			}
-			else callback();
-		}
-	);
-}
-
 var imagesDownloaded = 0;
 
 function downloadImage(name, url, out, referer, callback) {
@@ -123,7 +101,7 @@ function downloadImage(name, url, out, referer, callback) {
 		callback();
 		return;
 	} else console.log("  [" + imagesDownloaded + "] Downloading image " + name);
-	downloadWget(url, out, referer, callback);
+	util.downloadWget(url, out, referer, callback);
 }
 
 function downloadImages(links, outDir, callbackFunc) {
