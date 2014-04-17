@@ -208,6 +208,7 @@ function downloadTagBased() {
 	if(!fs.existsSync(outDir)) fs.mkdirSync(outDir);
 	var pid = 0;
 	var parseFunc = function(err, links, result) {
+		pid += links.length;
 		if(err) throw err;
 		else downloadImageArray(links, result, outDir, downloadFunc);
 	};
